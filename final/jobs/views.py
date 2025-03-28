@@ -1,4 +1,3 @@
-
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import authenticate, login, get_user_model, logout
 from django.contrib.auth.forms import AuthenticationForm
@@ -6,12 +5,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from .forms import CustomUserCreationForm, EmployerProfileForm, VacancyForm, PasswordResetForm  # Import custom forms
-from .models import EmployerProfile, Vacancy  # Import models
+from .models import EmployerProfile, Vacancy, JobSeekerProfile  # Import models
 
 
 # Home view, handles role selection
 def home(request):
     return render(request, 'jobs/home.html')  # Just render the home page template
+
 
 # User Registration View
 def register(request):
@@ -215,7 +215,6 @@ def job_seeker_profile(request):
     return render(request, 'jobs/job_seeker_profile.html', context)  # Render job seeker profile page
 
 
-# Vacancy Detail View for Job Seekers (Apply for Jobs)
 @login_required
 def vacancy_detail_job_seeker(request, vacancy_id):
     # Fetch the vacancy details for job seekers
@@ -224,9 +223,10 @@ def vacancy_detail_job_seeker(request, vacancy_id):
     if request.method == 'POST':
         # Check if a resume is uploaded by the job seeker
         if 'resume' not in request.FILES:
-            messages.error(request, "Please upload your resume!")  # Error if resume is missing
+            messages.error(request, "Please upload your resume!")
+            return render(request, 'jobs/vacancy_detail_job_seeker.html', {'vacancy': vacancy})
 
-        # Save the uploaded resume and send an email application
+        # Get the resume file
         resume = request.FILES['resume']
 
         try:
@@ -240,9 +240,7 @@ def vacancy_detail_job_seeker(request, vacancy_id):
                 subject=f"Job Application for {vacancy.title}",
                 body=f"""
                 Dear Hiring Manager,
-
                 I am applying for the position of {vacancy.title} at {vacancy.company}.
-
                 Best regards,
                 {request.user.username}
                 """,
@@ -261,11 +259,13 @@ def vacancy_detail_job_seeker(request, vacancy_id):
             except Exception as email_error:
                 # Handle email sending error
                 messages.error(request, f"Failed to send application: {str(email_error)}")
+                return render(request, 'jobs/vacancy_detail_job_seeker.html', {'vacancy': vacancy})
 
         except EmployerProfile.DoesNotExist:
-            messages.error(request, "Could not find employer contact information.")  # Handle missing employer profile
+            messages.error(request, "Could not find employer contact information.")
+            return render(request, 'jobs/vacancy_detail_job_seeker.html', {'vacancy': vacancy})
 
-    return render(request, 'jobs/vacancy_detail_job_seeker.html', {'vacancy': vacancy})  # Render vacancy details page
+    return render(request, 'jobs/vacancy_detail_job_seeker.html', {'vacancy': vacancy})
 
 
 # Resume Upload Success Page (for Job Seekers)
