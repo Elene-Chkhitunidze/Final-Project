@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CareerLink - Job Seeker Profile</title>
     <style>
-
         * {
             margin: 0;
             padding: 0;
@@ -58,14 +57,14 @@
             margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 10px; /* Space between elements */
+            gap: 10px;
         }
 
         .search-container input {
             padding: 10px;
             font-size: 1rem;
-            flex: 1; /* Allows inputs to take equal space */
-            min-width: 200px; /* Ensures fields are not too small */
+            flex: 1;
+            min-width: 200px;
             border: 1px solid #ddd;
             border-radius: 5px;
         }
@@ -78,8 +77,8 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            white-space: nowrap; /* Prevent button text from wrapping */
-            flex-shrink: 0; /* Prevent button from shrinking */
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .search-container button:hover {
@@ -92,25 +91,27 @@
         }
 
         .vacancies-list li {
-            padding: 10px;
-            background-color: #ecf0f1;
-            margin-bottom: 10px;
-            border-radius: 5px;
+            margin-bottom: 15px;
             font-size: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px; /* Space between job title and button */
+        }
+
+        .job-title {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            flex-grow: 1;
+            color: #2c3e50;
+            font-weight: bold;
+            text-decoration: none;
             transition: background-color 0.3s;
         }
 
-        .vacancies-list li:hover {
+        .job-title:hover {
             background-color: #bdc3c7;
-        }
-
-        .vacancies-list a {
-            color: #2c3e50;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .vacancies-list a:hover {
             text-decoration: underline;
         }
 
@@ -140,7 +141,92 @@
             margin: 0 5px;
         }
 
+        .btn-add-to-favorites {
+            background-color: #f39c12;
+            color: white;
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0; /* Prevent button from shrinking */
+            transition: background-color 0.3s;
+        }
+
+        .btn-add-to-favorites:hover {
+            background-color: #e67e22;
+        }
+
+        .btn-added {
+            background-color: #2ecc71;
+        }
+
+        .btn-added:hover {
+            background-color: #27ae60;
+        }
+
+        .favorites-button {
+            background-color: #f39c12;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            text-decoration: none;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
     </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const favoriteButtons = document.querySelectorAll('.btn-add-to-favorites');
+
+            favoriteButtons.forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+
+                    // Get form data and send AJAX request
+                    const form = this.closest('form');
+                    const formData = new FormData(form);
+                    const vacancyId = form.getAttribute('data-vacancy-id');
+
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success') {
+                            // Update the button appearance based on the server response
+                            if (data.is_favorited) {
+                                button.classList.add('btn-added');
+                                button.style.backgroundColor = '#2ecc71'; // Green
+                                button.textContent = '★'; // Filled star
+                            } else {
+                                button.classList.remove('btn-added');
+                                button.style.backgroundColor = '#f39c12'; // Yellow
+                                button.textContent = '☆'; // Empty star
+                            }
+                        } else {
+                            alert(data.message || 'Failed to update favorites.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to update favorites. Please try again.');
+                    });
+                });
+            });
+        });
+    </script>
 </head>
 <body>
 
@@ -149,36 +235,44 @@
     <h1>CareerLink</h1>
     <a href="{% url 'logout' %}" class="logout-button">Logout</a>
 
-
     <div class="search-container">
         <form method="GET" action="" style="display: flex; gap: 10px;">
             <input type="text" name="search_company" placeholder="Search by Company" value="{{ search_company }}">
             <input type="text" name="search_title" placeholder="Search by Position" value="{{ search_title }}">
             <button type="submit">Search</button>
         </form>
+        <a href="{% url 'favourites_list' %}" class="favorites-button">Favorites</a>
     </div>
 
     <h2>Job Vacancies</h2>
 
-
     <ul class="vacancies-list">
         {% for vacancy in vacancies %}
         <li>
-            <a href="{% url 'vacancy_detail_job_seeker' vacancy.id %}">
+            <a href="{% url 'vacancy_detail_job_seeker' vacancy.id %}" class="job-title">
                 {{ vacancy.title }} at {{ vacancy.company }}
             </a>
+
+            <form method="POST" action="{% url 'add_to_favourites' vacancy.id %}" class="favorite-form"
+                  data-vacancy-id="{{ vacancy.id }}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="btn-add-to-favorites {% if vacancy in request.user.favorites.all %}btn-added{% endif %}"
+                        style="{% if vacancy in request.user.favorites.all %}background-color: #2ecc71;{% else %}background-color: #f39c12;{% endif %}">
+                    {% if vacancy in request.user.favorites.all %}★{% else %}☆{% endif %}
+                </button>
+            </form>
         </li>
         {% empty %}
         <p>No job vacancies found.</p>
         {% endfor %}
     </ul>
 
-
     <div class="pagination">
         <span class="step-links">
             {% if vacancies.has_previous %}
-                <a href="?page=1">« first</a>
-                <a href="?page={{ vacancies.previous_page_number }}">previous</a>
+                <a href="?page=1{% if search_company %}&search_company={{ search_company }}{% endif %}{% if search_title %}&search_title={{ search_title }}{% endif %}">« first</a>
+                <a href="?page={{ vacancies.previous_page_number }}{% if search_company %}&search_company={{ search_company }}{% endif %}{% if search_title %}&search_title={{ search_title }}{% endif %}">previous</a>
             {% endif %}
 
             <span class="current">
@@ -186,11 +280,12 @@
             </span>
 
             {% if vacancies.has_next %}
-                <a href="?page={{ vacancies.next_page_number }}">next</a>
-                <a href="?page={{ vacancies.paginator.num_pages }}">last »</a>
+                <a href="?page={{ vacancies.next_page_number }}{% if search_company %}&search_company={{ search_company }}{% endif %}{% if search_title %}&search_title={{ search_title }}{% endif %}">next</a>
+                <a href="?page={{ vacancies.paginator.num_pages }}{% if search_company %}&search_company={{ search_company }}{% endif %}{% if search_title %}&search_title={{ search_title }}{% endif %}">last »</a>
             {% endif %}
         </span>
     </div>
+
 </div>
 
 </body>

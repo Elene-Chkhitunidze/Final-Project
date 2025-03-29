@@ -6,6 +6,10 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from .forms import CustomUserCreationForm, EmployerProfileForm, VacancyForm, PasswordResetForm  # Import custom forms
 from .models import EmployerProfile, Vacancy, JobSeekerProfile  # Import models
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 
 
 # Home view, handles role selection
@@ -272,3 +276,53 @@ def vacancy_detail_job_seeker(request, vacancy_id):
 @login_required
 def resume_upload_success(request):
     return render(request, 'jobs/resume_upload_success.html')  # Render resume upload success page
+
+
+@login_required
+@require_POST
+def add_to_favourites(request, vacancy_id):
+    try:
+        vacancy = get_object_or_404(Vacancy, pk=vacancy_id)
+        user = request.user
+
+        # Check if the vacancy is already in favorites
+        if vacancy in user.favorites.all():
+            # Remove from favorites
+            user.favorites.remove(vacancy)
+            is_favorited = False
+            message = 'Removed from favorites'
+        else:
+            # Add to favorites
+            user.favorites.add(vacancy)
+            is_favorited = True
+            message = 'Added to favorites'
+
+        return JsonResponse({
+            'status': 'success',
+            'is_favorited': is_favorited,
+            'message': message
+        })
+    except Exception as e:
+        # Log the error
+        print(f"Error in add_to_favourites: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Failed to update favorites. Please try again.'
+        }, status=500)
+
+
+
+
+def favourites_list(request):
+    # Get the logged-in user
+    user = request.user
+    # Get the vacancies that the user has marked as favorites
+    favorites = user.favorites.all()
+
+    # Paginate the favorites list (optional)
+    from django.core.paginator import Paginator
+    paginator = Paginator(favorites, 10)  # Show 10 favorites per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'jobs/favourites_list.html', {'favorites': page_obj})

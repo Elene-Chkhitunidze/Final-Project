@@ -3,6 +3,7 @@ from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import custom_logout
+from .views import add_to_favourites, favourites_list
 
 urlpatterns = [
                   path('', views.home, name='home'),
@@ -19,4 +20,6 @@ urlpatterns = [
                   path('vacancy/job_seeker/<int:vacancy_id>/', views.vacancy_detail_job_seeker, name='vacancy_detail_job_seeker'),
                   path('reset-password/', views.forgot_password, name='reset_password'),
                   path('resume-upload-success/', views.resume_upload_success, name='resume_upload_success'),
+                  path('vacancy/<int:vacancy_id>/add_to_favourites/', add_to_favourites, name='add_to_favourites'),
+                  path('favourites/', favourites_list, name='favourites_list'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

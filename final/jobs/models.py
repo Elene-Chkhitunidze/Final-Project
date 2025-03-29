@@ -45,6 +45,8 @@ class CustomUser(AbstractUser):
         verbose_name='user permissions'
     )
 
+    favorites = models.ManyToManyField('Vacancy', related_name='favorited_by', blank=True)
+
     # String representation of the user instance, returns the username
     def __str__(self):
         return self.username
@@ -80,14 +82,10 @@ class Vacancy(models.Model):
         return self.title
 
 
-# JobSeekerProfile class stores information specific to job seekers
 class JobSeekerProfile(models.Model):
-    # One-to-One relationship with the user (each job seeker will have one profile)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-
-    # Optional field for the job seeker's resume, allowing file uploads
     resume = models.FileField(upload_to='resumes/', blank=True, null=True)
+    favourite_vacancies = models.ManyToManyField(Vacancy, blank=True)
 
-    # String representation of the job seeker's profile, returns the job seeker's username
     def __str__(self):
         return f"{self.user.username}'s Profile"

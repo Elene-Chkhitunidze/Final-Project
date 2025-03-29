@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareerLink - Favorite Vacancies</title>
+    <style>
+        /* Use the same styles as job seeker profile */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #333;
+            text-align: center;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .back-button:hover {
+            background-color: #2980b9;
+        }
+
+        .vacancies-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .vacancies-list li {
+            margin-bottom: 15px;
+            font-size: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .job-title {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            flex-grow: 1;
+            color: #2c3e50;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .job-title:hover {
+            background-color: #bdc3c7;
+        }
+
+        .pagination {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .pagination a {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+
+        .pagination a:hover {
+            background-color: #2980b9;
+        }
+
+        .pagination .current {
+            padding: 8px 16px;
+            background-color: #95a5a6;
+            color: white;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>CareerLink</h1>
+    <a href="{% url 'job_seeker_profile' %}" class="back-button">Back</a>
+
+    <h2>Your Favorite Vacancies</h2>
+
+    <ul class="vacancies-list">
+        {% for vacancy in favorites %}
+        <li>
+            <a href="{% url 'vacancy_detail_job_seeker' vacancy.id %}" class="job-title">
+                {{ vacancy.title }} at {{ vacancy.company }}
+            </a>
+        </li>
+        {% empty %}
+        <p>No favorite vacancies found</p>
+        {% endfor %}
+    </ul>
+
+    <div class="pagination">
+        <span class="step-links">
+            {% if favorites.has_previous %}
+                <a href="?page=1">« first</a>
+                <a href="?page={{ favorites.previous_page_number }}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ favorites.number }} of {{ favorites.paginator.num_pages }}
+            </span>
+
+            {% if favorites.has_next %}
+                <a href="?page={{ favorites.next_page_number }}">next</a>
+                <a href="?page={{ favorites.paginator.num_pages }}">last »</a>
+            {% endif %}
+        </span>
+    </div>
+
+</div>
+
+</body>
+</html>
